@@ -2,43 +2,98 @@
 
 import sys
 
+"""
+Instruction Set: an instruction is a command which tesll the CPU to do some fundamental task, such as add 2 numbers. Instructions have both an opcode which indicates the kind of task to perform and a set of parameters which provide inputs to the task being performed
+Each opcode represents one task that the CPU "knows" how to do. There are just 16 opcodes in LS-8. Everything the computer can calculate is some sequence of these simple instructions. Each instruction is 16 bits long, with the left 4 bits storing the opcode. The rest of the bits are used to store the parameters
+"""
+ADD = 0b10100000 
+AND = 0b10101000
+CALL = 0b01010000
+CMP = 0b10100111 
+DEC = 0b01100110
+DIV = 0b10100011
+HLT = 0b00000001
+INC = 0b01100101
+JEQ = 0b01010101
+JMP = 0b01010100
+JNE = 0b01010110
+LDI = 0b10000010
+MUL = 0b10100010
+POP = 0b01000110
+PRN = 0b01000111 
+PUSH = 0b01000101 
+RET = 0b00010001 
+
+
+# R7 is reserved as the Stack Pointer (SP). SP points at the value at the top of the stack (most recently pushed), or address F4 if the stack is empty
+sp = 7
+
+# Centeral Processing Unit
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
-        """Construct a new CPU."""
-        pass
+        """Step 1: Construct a new CPU."""
+        # initialize the ram with 256 bytes
+        self.ram = [0] * 256  
+        self.reg = [0] * 8 
+        self.pc = 0  
+        self.reg[sp] = 0xF4
+        self.FL = None
+    
+
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+    
+
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
+        return self.ram_read(MAR)
+        
+
 
     def load(self):
         """Load a program into memory."""
-
+        
         address = 0
 
         # For now, we've just hardcoded a program:
+        program = []
+        if len(sys.argv) != 2:
+            print('womp')
+            sys.exit(1)
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        try:
+            with open("examples/"+sys.argv[1]) as f:
+                for line in f:
+                    comment_split = line.split("#") # 10000010 # LDI R0,8 --> ['10000010 ', ' LDI R0,8']
+                    num = comment_split[0]
+                    
+                    try:
+                        x = int(num, 2)
+                        self.ram[address] = x
+                        print("{:08b}: {:d}".format(x, x))
+                        address += 1
+                    except:
+                        # print('cant convert string to number')
+                        continue
+        except:
+            print('file not found')
+            sys.exit(1)
 
         for instruction in program:
             self.ram[address] = instruction
             address += 1
-
+            
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
+        
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
+        
 
     def trace(self):
         """
@@ -58,8 +113,30 @@ class CPU:
         for i in range(8):
             print(" %02X" % self.reg[i], end='')
 
-        print()
+
 
     def run(self):
         """Run the CPU."""
-        pass
+        self.running = True
+        while self.running:
+            IR = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+            if IR == LDI:
+
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+
+            elif IR == PRN:
+                val = self.reg[operand_a]
+                print(f'PRN --> {val}')
+                self.pc += 2
+
+            elif IR == HLT:
+                self.running = False
+
+            elif IR == MUL:
+                print()
+            else:
+                print("done")
+                sys.exit(1)
