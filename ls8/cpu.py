@@ -60,7 +60,7 @@ class CPU:
         # For now, we've just hardcoded a program:
         program = []
         if len(sys.argv) != 2:
-            print('womp')
+            print('Please include the file you would like to run in your initialization command')
             sys.exit(1)
 
         try:
@@ -72,7 +72,7 @@ class CPU:
                     try:
                         x = int(num, 2)
                         self.ram[address] = x
-                        print("{:08b}: {:d}".format(x, x))
+                        # print("{:08b}: {:d}".format(x, x))
                         address += 1
                     except:
                         # print('cant convert string to number')
@@ -88,9 +88,11 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-        
-        if op == "ADD":
+        if op == ADD:
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == MUL:
+             self.reg[reg_a] *= self.reg[reg_b]
+
         else:
             raise Exception("Unsupported ALU operation")
         
@@ -110,8 +112,7 @@ class CPU:
             self.ram_read(self.pc + 2)
         ), end='')
 
-        for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+
 
 
 
@@ -136,7 +137,9 @@ class CPU:
                 self.running = False
 
             elif IR == MUL:
-                print()
+                self.alu(IR, operand_a, operand_b)
+                self.pc += 3
             else:
                 print("done")
                 sys.exit(1)
+
