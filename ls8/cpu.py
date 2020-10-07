@@ -40,6 +40,9 @@ class CPU:
         self.pc = 0  
         self.reg[sp] = 0xF4
         self.FL = None
+        self.SP = 7
+        
+
     
 
     def ram_read(self, MAR):
@@ -65,6 +68,7 @@ class CPU:
 
         try:
             with open("examples/"+sys.argv[1]) as f:
+                
                 for line in f:
                     comment_split = line.split("#") # 10000010 # LDI R0,8 --> ['10000010 ', ' LDI R0,8']
                     num = comment_split[0]
@@ -77,6 +81,7 @@ class CPU:
                     except:
                         # print('cant convert string to number')
                         continue
+                self.reg[self.SP] = len(self.ram) - 1
         except:
             print('file not found')
             sys.exit(1)
@@ -139,6 +144,24 @@ class CPU:
             elif IR == MUL:
                 self.alu(IR, operand_a, operand_b)
                 self.pc += 3
+            elif IR == ADD:
+                regA = self.ram[self.pc + 1]
+                regB = self.ram[self.pc + 2]
+                sumOfRegisters = self.reg[regA] + self.reg[regB]
+                self.reg[regA] = sumOfRegisters
+                self.pc += 2
+            elif IR == PUSH:
+                self.reg[self.SP] -= 1
+                reg_to_get_val = self.ram[self.pc+1]
+                value_in_reg = self.reg[reg_to_get_val]
+                self.ram[self.reg[self.SP]] = value_in_reg
+                self.pc += 2
+            elif IR == POP:
+                top_most_val = self.ram[self.reg[self.SP]]
+                reg_to_store_in = self.ram[self.pc+1]
+                self.reg[reg_to_store_in] = top_most_val
+                self.reg[self.SP] += 1
+                self.pc += 2
             else:
                 print("done")
                 sys.exit(1)
