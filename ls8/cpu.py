@@ -111,17 +111,14 @@ class CPU:
         elif op == cmds["CMP"]:
             if self.reg[reg_a] == self.reg[reg_b]:
                 self.FL = 0b00000001
-                print("setting flag to E")
                 # 00000LGE
                 #do a E
             elif self.reg[reg_a] > self.reg[reg_b]:
                 self.FL = 0b00000010
-                print("setting flag to G")
 
                 #do a G
             elif self.reg[reg_a] < self.reg[reg_b]:
                 self.FL = 0b00000100
-                print("setting flag to L")
 
                 #do a L
             else:
@@ -160,8 +157,9 @@ class CPU:
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
             if IR == cmds["LDI"]:
-
+                # print("throwing ", operand_b, " into register ", operand_a)
                 self.reg[operand_a] = operand_b
+                # print(self.reg[2])
                 self.pc += 3
 
             elif IR == cmds["PRN"]:
@@ -208,23 +206,25 @@ class CPU:
                 # set the pc to that value
                 self.pc = addressToReturnTo
             elif IR == cmds["CMP"]:
-                print("comparing ", operand_a, " and ", operand_b)
+                # print("comparing ", operand_a, " and ", operand_b)
                 self.alu(IR, operand_a, operand_b)
                 self.pc += 3
                 # sys.exit()
             elif IR == cmds["JMP"]:
                 # do iiiit
-                self.pc = operand_a
+                self.pc = self.reg[operand_a]
             elif IR == cmds["JNE"]:
                 # do iiiit
-                if ~(self.FL & 0b00000001):
-                    print("assigning stuff ", self.pc, operand_a)
-                    self.pc = operand_a
+                if self.FL &~ 0b00000001:
+                    self.pc = self.reg[operand_a]
+                else:
+                    self.pc += 2
             elif IR == cmds["JEQ"]:
                 # do iiiit
                 if self.FL & 0b00000001:
-                    self.pc = operand_a
-                self.pc += 2
+                    self.pc = self.reg[operand_a]
+                else:
+                    self.pc += 2
 
             elif IR == 0:
                 self.pc+=1
@@ -232,7 +232,6 @@ class CPU:
             
             else:
                 print("uh?")
-                print(self.pc, self.ram_read(self.pc))
                 print("done")
                 sys.exit(1)
             
