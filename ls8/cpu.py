@@ -6,8 +6,7 @@ import sys
 Instruction Set: an instruction is a command which tesll the CPU to do some fundamental task, such as add 2 numbers. Instructions have both an opcode which indicates the kind of task to perform and a set of parameters which provide inputs to the task being performed
 Each opcode represents one task that the CPU "knows" how to do. There are just 16 opcodes in LS-8. Everything the computer can calculate is some sequence of these simple instructions. Each instruction is 16 bits long, with the left 4 bits storing the opcode. The rest of the bits are used to store the parameters
 """
-0b1010000
-0b10000010
+
 cmds = {
 "ADD":  0b10100000, 
 "AND":  0b10101000,
@@ -49,9 +48,8 @@ class CPU:
         self.reg = [0] * 8 
         self.pc = 0
         self.SP = 7
+        self.FL = 0b00000000
         self.reg[self.SP] = 0xF4
-        self.FL = None
-
         
 
     
@@ -110,6 +108,24 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == cmds["MUL"]:
              self.reg[reg_a] *= self.reg[reg_b]
+        elif op == cmds["CMP"]:
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.FL = 0b00000001
+                print("setting flag to E")
+                # 00000LGE
+                #do a E
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.FL = 0b00000010
+                print("setting flag to G")
+
+                #do a G
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.FL = 0b00000100
+                print("setting flag to L")
+
+                #do a L
+            else:
+                self.FL = 0b00000000
 
         else:
             raise Exception("Unsupported ALU operation")
@@ -123,8 +139,8 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
-            #self.ie,
+            # self.FL,
+            # self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
             self.ram_read(self.pc + 2)
@@ -138,9 +154,7 @@ class CPU:
         """Run the CPU."""
         self.running = True
         while self.running:
-            
             IR = self.ram_read(self.pc)
-
                 
                 
             operand_a = self.ram_read(self.pc + 1)
@@ -193,12 +207,54 @@ class CPU:
                 self.ram[self.reg[self.SP]] += 1
                 # set the pc to that value
                 self.pc = addressToReturnTo
+            elif IR == cmds["CMP"]:
+                print("comparing ", operand_a, " and ", operand_b)
+                self.alu(IR, operand_a, operand_b)
+                self.pc += 3
+                # sys.exit()
+            elif IR == cmds["JMP"]:
+                # do iiiit
+                self.pc = operand_a
+            elif IR == cmds["JNE"]:
+                # do iiiit
+                if ~(self.FL & 0b00000001):
+                    print("assigning stuff ", self.pc, operand_a)
+                    self.pc = operand_a
+            elif IR == cmds["JEQ"]:
+                # do iiiit
+                if self.FL & 0b00000001:
+                    self.pc = operand_a
+                self.pc += 2
 
             elif IR == 0:
                 self.pc+=1
                 continue
             
             else:
+                print("uh?")
+                print(self.pc, self.ram_read(self.pc))
                 print("done")
                 sys.exit(1)
+            
 
+# ### CMP
+
+# *This is an instruction handled by the ALU.*
+
+# `CMP registerA registerB`
+
+# Compare the values in two registers.
+
+# * If they are equal, set the Equal `E` flag to 1, otherwise set it to 0.
+
+# * If registerA is less than registerB, set the Less-than `L` flag to 1,
+#   otherwise set it to 0.
+
+# * If registerA is greater than registerB, set the Greater-than `G` flag
+#   to 1, otherwise set it to 0.
+
+# Machine code:
+# ```
+# 10100111 00000aaa 00000bbb
+# A7 0a 0b
+# ```
